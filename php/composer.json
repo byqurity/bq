@@ -1,0 +1,16 @@
+{
+  "name": "bq/php",
+  "description": "Lightweight PHP app lib by byqurity.dev",
+  "type": "library",
+  "autoload": {
+    "psr-4": {
+      "bq\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=7.4"
+  },
+  "license": "MIT",
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
