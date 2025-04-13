@@ -10,6 +10,15 @@
   "require": {
     "php": ">=7.4"
   },
+  "autoload": {
+    "files": [
+      "src/env.php",
+      "src/database.php",
+      "src/router.php",
+      "src/ssr.php",
+      "src/static_files.php"
+    ]
+  },
   "license": "MIT",
   "minimum-stability": "dev",
   "prefer-stable": true
