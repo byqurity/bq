@@ -96,11 +96,11 @@ function router(callable $prepare, array $routes) {
 
     function findRoute(&$routes, &$context, &$found) {
       foreach ($routes as $route) {
-        $pattern = $route['pattern'];
-        $params  = [];
+        $pattern  = $route['pattern'];
+        $params   = [];
+        $isParent = is_array($route['routes']);
 
-        if (empty($pattern) || preg_match('/^' . $pattern . '$/', $context->path, $params)) {
-          $isParent = is_array($route['routes']);
+        if (empty($pattern) || preg_match('/^' . $pattern . ($isParent ? '' : '$') . '/', $context->path, $params)) {
   
           if (!$isParent) {
             $found |= 1;

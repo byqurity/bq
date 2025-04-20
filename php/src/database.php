@@ -14,10 +14,9 @@ function query(string $query, $params = null) {
     $port     = $_ENV['DB_PORT'] ?? 3306;
 
     if ($dbType === 'mysql' || $dbType === 'mariadb') {
-      $dsn = "mysql:host=$host;dbname=$dbName;port=$port";
-      $connection = new PDO($dsn, $user, $password);
-      $connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-      $connection->exec("SET NAMES utf8");  // Set charset to utf8
+      $dsn        = "mysql:host=$host;dbname=$dbName;port=$port;charset=utf8mb4;sslmode=prefer";
+      $options    = [ PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false, PDO::MYSQL_ATTR_SSL_CA => null ];
+      $connection = new PDO($dsn, $user, $password, $options);
     } elseif ($dbType === 'pgsql') {
       $dsn = "pgsql:host=$host;dbname=$dbName;port=$port";
       $connection = new PDO($dsn, $user, $password);
@@ -48,7 +47,17 @@ function query(string $query, $params = null) {
   }
   
   if (strpos(ltrim($query), 'SELECT') === 0) {
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    foreach ($list as &$e) {
+      foreach ($e as $k => $v) {
+        if (is_string($v) && ((str_starts_with($v, '{') && str_ends_with($v, '}')) || str_ends_with($v, '[') && str_ends_with($v, ']'))) {
+          $e[$k] = json_decode($v, true);
+        }
+      }
+    }
+
+    return $list;
   } else {
     return (object) ['affected' => $stmt->rowCount(), 'id' => $connection->lastInsertId()];
   }
