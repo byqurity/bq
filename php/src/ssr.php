@@ -167,7 +167,9 @@ function renderElement($e, &$context, callable $children = null) {
             $attr = $attrValue->value;
           }
 
-          echo ' ' . $attrName . ($attr != '' ? ('="' . trim($attr) . '"') : '');
+          $quote = str_contains($attr, '"') ? '\'' : '"';
+
+          echo ' ' . $attrName . ($attr != '' ? ('=' . $quote . $attr . $quote) : '');
         }
   
         echo '>';
