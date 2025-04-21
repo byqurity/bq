@@ -211,3 +211,13 @@ function render($path, &$context, callable $children = null) {
   }
 
 }
+
+function sync($key, $text = null, $attributes = []) {
+  print  PHP_EOL . '<data data-sync="' . $key . '"';
+
+  foreach ($attributes as $k => $v) {
+    print ' data-sync.' . $k . '="' . $v . '"';
+  }
+  
+  print '>' . $text . '</data>';
+}

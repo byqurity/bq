@@ -55,6 +55,10 @@ class Context {
     return isset($this->cookies[$key]) ? $this->cookies[$key] : null;
   }
 
+  public function data() {
+    return json_decode(file_get_contents('php://input'), true);
+  }
+
   public function bind(string $key, callable $fetch) {
     $this->bindings[$key] ??= [];
     $this->bindings[$key][] = $fetch;

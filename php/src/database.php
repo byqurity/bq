@@ -46,12 +46,12 @@ function query(string $query, $params = null) {
     return ['error' => $stmt->errorInfo()];
   }
   
-  if (strpos(ltrim($query), 'SELECT') === 0) {
+  if (strpos(ltrim($query), 'SELECT') === 0 || strpos(ltrim($query), 'RETURNING') !== false) {
     $list = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     foreach ($list as &$e) {
       foreach ($e as $k => $v) {
-        if (is_string($v) && ((str_starts_with($v, '{') && str_ends_with($v, '}')) || str_ends_with($v, '[') && str_ends_with($v, ']'))) {
+        if (is_string($v) && ((str_starts_with($v, '{') && str_ends_with($v, '}')) || str_starts_with($v, '[') && str_ends_with($v, ']'))) {
           $e[$k] = json_decode($v, true);
         }
       }

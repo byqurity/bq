@@ -3,7 +3,7 @@
 include_once 'context.php';
 
 function route(
-  string    $method      = 'GET', 
+  string    $method      = '*', 
   string    $path        = '', 
   string    $contentType = '*/*', 
   string    $accept      = '*/*', 
@@ -106,7 +106,7 @@ function router(callable $prepare, array $routes) {
             $found |= 1;
           }
   
-          if ($route['method'] != $context->method) {
+          if ($route['method'] != '*' && $route['method'] != $context->method) {
             continue;
           }
   
