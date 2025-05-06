@@ -146,7 +146,7 @@ hook('form', (e) => {
         replace = e.dataset.replace;
 
   e.addEventListener('submit', async (ev) => {
-    const submitter   = ev.submitter,
+    const submitter   = ev.submitter ?? e,
           url         = new URL(e.dataset.url ?? submitter.getAttribute('formaction') ?? e.action ?? location.pathname, location.href),
           method      = (submitter.getAttribute('formmethod') ?? e.getAttribute('method') ?? 'GET').toUpperCase(),
           contentType = submitter.getAttribute('formenctype') ?? e.getAttribute('enctype') ?? 'application/x-www-form-urlencoded';
@@ -195,11 +195,11 @@ hook('form', (e) => {
       return input.type == 'checkbox' ? input.checked : input.type == 'number' ? input.valueAsNumber : input.value;
     }
 
-    for (const input of e.querySelectorAll('input,select,textarea,[name]')) {
+    for (const input of e.querySelectorAll('input[name],select[name],textarea[name]')) {
       const v = valueOf(input);
 
       if (method == 'GET' || method == 'POST' && contentType == 'application/x-www-form-urlencoded') {
-        v != false ? url.searchParams.set(input.name, v) : null;
+        v != false ? url.searchParams.set(input.name, v) : url.searchParams.delete(input.name);
       } else if (method == 'POST' && contentType == 'application/json') {
         setProperty(input.name, v);
       } 
@@ -214,7 +214,7 @@ hook('form', (e) => {
   
     if (remove) {
       for (const e of document.querySelectorAll(remove)) {
-        e.classList.add('--remove');
+        e.remove();
       }
     }
 
@@ -223,16 +223,21 @@ hook('form', (e) => {
     } 
   
     pending[url.pathname] = new AbortController();
+
+    let body;
+
+    if (['POST', 'PUT', 'PATCH'].includes(method)) {
+      body = contentType == 'application/json' ? JSON.stringify(data) : url.searchParams.toString();
+    }
   
-    const response = await fetch(url, { 
-      method: method,
+    const response = await fetch(method == 'GET' ? url : url.pathname, { 
+      method, body,
       signal: pending[url.pathname].signal,
-      body: method == 'POST' && contentType == 'application/json' ? JSON.stringify(data) : url.searchParams.toString(),
       headers: {
         'content-type': contentType,
         'accept': 'text/html'
       }
-    }).catch(_ => ({ ok: false }));
+    }).catch(_ => (console.error(_) && { ok: false, status: 500, statusText: _.toString() }));
 
     if (response.ok) {
       const html = dom(await response.text());
@@ -244,12 +249,6 @@ hook('form', (e) => {
       }
 
       document.startViewTransition(() => {
-
-        if (remove) {
-          for (const e of document.querySelectorAll(remove)) {
-            e.remove();
-          }
-        }
         
         if (append) {
           const appendContainer = document.querySelector(append);
@@ -268,8 +267,7 @@ hook('form', (e) => {
   
           p.parentNode.insertBefore(html.querySelector(select), p);
         }
-  
-        reset(e);
+
       });
       
     }
