@@ -91,7 +91,7 @@ function renderElement($e, &$context, callable $children = null) {
     } else if ($e->nodeName == 'scope') {
 
       foreach ($e->attributes as $key => $attr) {
-        $v = value($context, $attr->value) ?? $attr->value;
+        $v = checkBinding($attr->value, $context) ?? $attr->value;
 
         $context->bind($key, fn() => $v);
       }

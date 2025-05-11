@@ -193,11 +193,7 @@ hook('form', (e) => {
 
       const v = () => input.value == '' ? null : input.value;
 
-      if (input.type == 'checkbox') {
-        return input.checked ? 'y' : null;
-      }
-
-      if (input.type == 'radio') {
+      if (input.type == 'radio' || input.type == 'checkbox') {
         return input.checked ? v() : null;
       }
       
@@ -241,7 +237,16 @@ hook('form', (e) => {
     } else {
 
       for (const k in data) {
-        url.searchParams.append(k, data[k]);
+
+        if (Array.isArray(data[k])) {
+
+          for (const v of data[k]) {
+            url.searchParams.append(k, v);
+          }
+
+        } else {
+          url.searchParams.append(k, data[k]);
+        }
       }
 
     }

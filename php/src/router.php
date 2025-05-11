@@ -71,7 +71,7 @@ function router(callable $prepare, array $routes) {
     $context->method = $method ?? $_SERVER['REQUEST_METHOD'];
     $context->host   = $host   ?? $_SERVER['HTTP_HOST'];
 
-    if (str_contains($context->path, '/.')) {
+    if (str_contains($context->path, '/.') || str_contains($context->path, '/_')) {
       http_response_code(403);
       exit;
     }
