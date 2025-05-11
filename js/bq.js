@@ -151,21 +151,19 @@ hook('form', (e) => {
           method      = (submitter.getAttribute('formmethod') ?? e.getAttribute('method') ?? 'GET').toUpperCase(),
           contentType = submitter.getAttribute('formenctype') ?? e.getAttribute('enctype') ?? 'application/x-www-form-urlencoded';
 
-    let data = null;
-
-    if (contentType == 'application/json') {
-      data = {};
-    } 
+    const data = {};
 
     ev.stopPropagation();
     ev.preventDefault();
 
-    document.dispatchEvent(new CustomEvent(`bq:fetch`, { 
-      detail: e.action ?? location.pathname 
-    }));
+    document.dispatchEvent(new CustomEvent(`bq:fetch`, {  detail: e.action ?? location.pathname }));
 
     const setProperty = (key, v) => {
       const parts = key.split('.');
+
+      if (v === null) {
+        return;
+      }
 
       let d = data;
 
@@ -192,18 +190,26 @@ hook('form', (e) => {
     }
 
     const valueOf = (input) => {
-      return input.type == 'checkbox' ? input.checked : input.type == 'number' ? input.valueAsNumber : input.value;
+
+      const v = () => input.value == '' ? null : input.value;
+
+      if (input.type == 'checkbox') {
+        return input.checked ? 'y' : null;
+      }
+
+      if (input.type == 'radio') {
+        return input.checked ? v() : null;
+      }
+      
+      if (input.type == 'number') {
+        return input.valueAsNumber;
+      } 
+      
+      return v();
     }
 
     for (const input of e.querySelectorAll('input[name],select[name],textarea[name]')) {
-      const v = valueOf(input);
-
-      if (method == 'GET' || method == 'POST' && contentType == 'application/x-www-form-urlencoded') {
-        v != false ? url.searchParams.set(input.name, v) : url.searchParams.delete(input.name);
-      } else if (method == 'POST' && contentType == 'application/json') {
-        setProperty(input.name, v);
-      } 
-
+      setProperty(input.name, valueOf(input));
     }
 
     e.classList.add('--loading');
@@ -226,8 +232,18 @@ hook('form', (e) => {
 
     let body;
 
+    for (const k of url.searchParams.keys()) {
+      url.searchParams.delete(k);
+    }
+
     if (['POST', 'PUT', 'PATCH'].includes(method)) {
-      body = contentType == 'application/json' ? JSON.stringify(data) : url.searchParams.toString();
+      body = contentType == 'application/json' ? JSON.stringify(data) : new URLSearchParams(data).toString();
+    } else {
+
+      for (const k in data) {
+        url.searchParams.append(k, data[k]);
+      }
+
     }
   
     const response = await fetch(method == 'GET' ? url : url.pathname, { 
@@ -239,38 +255,37 @@ hook('form', (e) => {
       }
     }).catch(_ => (console.error(_) && { ok: false, status: 500, statusText: _.toString() }));
 
+    const html = dom(await response.text());
+
+    delete pending[url.pathname];
+
     if (response.ok) {
-      const html = dom(await response.text());
-
-      delete pending[url.pathname];
-
       if (url.pathname == location.pathname) {
         window.history.replaceState(null, null, url);
+      }     
+    }
+
+    document.startViewTransition(() => {
+        
+      if (append) {
+        const appendContainer = document.querySelector(append);
+
+        for (const e of html.querySelectorAll(select)) {
+          appendContainer.append(e);
+        }
       }
 
-      document.startViewTransition(() => {
-        
-        if (append) {
-          const appendContainer = document.querySelector(append);
-  
-          for (const e of html.querySelectorAll(select)) {
-            appendContainer.append(e);
-          }
-        }
-  
-        if (replace) {
-          document.querySelector(replace).replaceWith(html.querySelector(select || replace));
-        }
-  
-        if (prepend) {
-          const p = document.querySelector(prepend);
-  
-          p.parentNode.insertBefore(html.querySelector(select), p);
-        }
+      if (replace) {
+        document.querySelector(replace).replaceWith(html.querySelector(select || replace));
+      }
 
-      });
-      
-    }
+      if (prepend) {
+        const p = document.querySelector(prepend);
+
+        p.parentNode.insertBefore(html.querySelector(select), p);
+      }
+
+    });
 
     if (append) {
       const appendContainer = document.querySelector(append);
