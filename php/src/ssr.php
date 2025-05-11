@@ -93,6 +93,10 @@ function renderElement($e, &$context, callable $children = null) {
       foreach ($e->attributes as $key => $attr) {
         $v = checkBinding($attr->value, $context) ?? $attr->value;
 
+        if ($v === $attr->value) {
+          $v = value($context, $attr->value) ?? $attr->value;
+        }
+
         $context->bind($key, fn() => $v);
       }
 
