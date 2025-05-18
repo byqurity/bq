@@ -228,7 +228,7 @@ hook('form', (e) => {
 
     let body;
 
-    for (const k of url.searchParams.keys()) {
+    for (const k of Array.from(url.searchParams.keys())) {
       url.searchParams.delete(k);
     }
 

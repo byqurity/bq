@@ -77,19 +77,6 @@ function router(callable $prepare, array $routes) {
     }
 
     $query ??= $_GET;
-
-    foreach ($query as $k => $v) {
-
-      if (str_contains($k, '_')) {
-        $p = explode('_', $k);
-
-        $query[$p[0]] ??= [];
-        $query[$p[0]][] = $p[1];
-
-        unset($query[$k]);
-      }
-    }
-
     $context->with(headers: $headers ?? getallheaders(), query: $query);
 
     $found = 0;
