@@ -131,7 +131,7 @@ hook('[data-trigger]', (e) => {
   e.addEventListener(e.dataset.trigger, () => {
     clearTimeout(timeout);
 
-    const submit = () => e.closest('form').dispatchEvent(new Event('submit', { bubbles: true }));
+    const submit = () => e.closest('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
     e.dataset.delay ? timeout = setTimeout(submit, parseInt(e.dataset.delay)) : submit();
   });
