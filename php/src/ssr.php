@@ -136,13 +136,21 @@ function renderElement($e, &$context, callable $children = null) {
       }
 
     } else if ($e->nodeName == 'for') {
-      $each = value($context, checkBinding($e->getAttribute('each'), $context));
+      $each      = value($context, checkBinding($e->getAttribute('each'), $context));
       $nameIndex = $e->hasAttribute('index') ? $e->getAttribute('index') : '@i';
       $nameValue = $e->hasAttribute('as') ? $e->getAttribute('as') : '@v';
-      
-      foreach ($each as $i => $v) {
-        $context->bind($nameIndex, fn() => $i);
-        $context->bind($nameValue, fn() => $v);
+      $keys      = array_keys($each);
+      $count     = count($keys);
+
+      foreach ($keys as $index => $key) {
+        $value = $each[$key];
+
+        $context->bind($nameIndex, fn() => $key);
+        $context->bind($nameValue, fn() => $value);
+
+        $context->bind('@count',         fn() => $count);
+        $context->bind('@next',          fn() => ($index + 1 < $count) ? [ 'index' => $keys[$index + 1], 'value' => $each[$keys[$index + 1]] ] : null);
+        $context->bind('@previous',      fn() => ($index - 1 >= 0)     ? [ 'index' => $keys[$index - 1], 'value' => $each[$keys[$index - 1]] ] : null);
 
         foreach ($e->childNodes as $child) {
           renderElement($child, $context, $children);
@@ -150,6 +158,9 @@ function renderElement($e, &$context, callable $children = null) {
 
         $context->unbind($nameIndex);
         $context->unbind($nameValue);
+        $context->unbind('@count');
+        $context->unbind('@next');
+        $context->unbind('@previous');
       }
 
     } else {
