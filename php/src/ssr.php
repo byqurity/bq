@@ -206,7 +206,7 @@ function renderElement($e, &$context, callable $children = null) {
 function render($path, &$context, callable $children = null) {
   static $documentCache = [];
 
-  $path = str_contains($path, 'html') ? $path : ('web/fragments/' . $path . '.fragment.html');
+  $path = str_contains($path, '.') ? $path : ('web/fragments/' . $path . '.fragment.html');
 
   if (!isset($documentCache[$path])) {
     libxml_use_internal_errors(true);
