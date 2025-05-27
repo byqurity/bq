@@ -12,11 +12,12 @@ function query(string $query, $params = null) {
     $password = $_ENV['DB_PASSWORD'];
     $dbName   = $_ENV['DB_NAME'];
     $port     = $_ENV['DB_PORT'] ?? 3306;
+    $ssl      = $_ENV['DB_SSL'] != null;
 
     if ($dbType === 'mysql' || $dbType === 'mariadb') {
-      $dsn        = "mysql:host=$host;dbname=$dbName;port=$port;charset=utf8mb4;sslmode=prefer";
+      $dsn        = "mysql:host=$host;dbname=$dbName;port=$port;charset=utf8mb4" . ($ssl ? ';sslmode=prefer' : '');
       $options    = [ PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false, PDO::MYSQL_ATTR_SSL_CA => null ];
-      $connection = new PDO($dsn, $user, $password, $options);
+      $connection = new PDO($dsn, $user, $password, ($ssl ? $options : []));
     } elseif ($dbType === 'pgsql') {
       $dsn = "pgsql:host=$host;dbname=$dbName;port=$port";
       $connection = new PDO($dsn, $user, $password);
