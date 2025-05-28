@@ -94,7 +94,7 @@ function renderElement($e, &$context, callable $children = null) {
         $v = checkBinding($attr->value, $context) ?? $attr->value;
 
         if ($v === $attr->value) {
-          $v = value($context, $attr->value) ?? $attr->value;
+          $v = value($context, $attr->value);
         }
 
         $context->bind($key, fn() => $v);
