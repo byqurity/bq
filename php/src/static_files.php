@@ -4,6 +4,10 @@ function localFetch(Context $context, $webDir = null) {
   $path = isset($webDir) ? $webDir : (isset($_ENV['WEB_DIR']) ? $_ENV['WEB_DIR'] : './web');
   $file = $path . $context->path;
 
+  if (str_contains($context->path, '/.') || str_contains($context->path, '/_')) {
+    http_response_code(403); exit;
+  }
+
   if (!str_contains($file, '.php') && is_file($file)) {
     $ps  = explode('.', $file);
     $ext = strtolower($ps[count($ps) - 1]);

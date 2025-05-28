@@ -217,6 +217,10 @@ function render($path, &$context, callable $children = null) {
     
     $documentCache[$path]->encoding = 'UTF-8';
     $documentCache[$path]->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_COMPACT | LIBXML_HTML_NODEFDTD);
+
+    if ($documentCache[$path]->doctype) {
+      echo '<!DOCTYPE ' . $documentCache[$path]->doctype->name . '>' . PHP_EOL;
+    }
     
     libxml_clear_errors();
   }
