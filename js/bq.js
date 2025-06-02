@@ -145,6 +145,10 @@ hook('form', (e) => {
         prepend = e.dataset.prepend,
         replace = e.dataset.replace;
 
+  if (e.hasAttribute('data-native')) {
+    return;
+  }
+
   e.addEventListener('submit', async (ev) => {
     const submitter   = ev.submitter ?? e,
           url         = new URL(e.dataset.url ?? submitter.getAttribute('formaction') ?? e.action ?? location.pathname, location.href),
