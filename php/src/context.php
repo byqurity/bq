@@ -8,15 +8,17 @@ class Context {
   private array $queryParams = [];
   private array $params      = [];
   
-  public string $path = '/';
+  public string $path   = '/';
+  public string $route  = '/';
   public string $method = 'GET';
   public string $host;
 
-  public function with($headers = null, $query = null, $params = null, $bindings = null) {
+  public function with($headers = null, $query = null, $params = null, $bindings = null, $route = null) {
     $this->headers     = isset($headers)  ? array_merge(array_change_key_case($headers)) : $this->headers;
     $this->queryParams = isset($query)    ? array_merge(array_change_key_case($query))   : $this->queryParams;
     $this->params      = isset($params)   ? array_merge(array_change_key_case($params))  : $this->params;
     $this->bindings    = isset($bindings) ? array_merge($bindings) : $this->bindings;
+    $this->route       = $route ?? '/';
 
     if (isset($this->headers['cookie'])) {
       

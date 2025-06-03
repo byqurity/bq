@@ -108,7 +108,7 @@ function router(callable $prepare, array $routes) {
             continue;
           }
           
-          $context->with(params: $params);
+          $context->with(params: $params, route: $pattern);
 
           foreach ($route['middlewares'] as $middleware) {
             $middleware($context);
