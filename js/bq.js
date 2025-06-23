@@ -104,8 +104,8 @@ const observer = new MutationObserver(mutations => {
 
 observer.observe(document, { childList: true, subtree: true });
 
-const reset = (form) => {
-  for (const input of form?.querySelectorAll('input,select,textarea,[name]') ?? []) {
+const reset = (form, select = 'input,select,textarea,[name]') => {
+  for (const input of form?.querySelectorAll(select) ?? []) {
     input.value = '';
   }
 }
@@ -115,7 +115,7 @@ hook('[type="reset"]', (e) => {
   e.addEventListener('click', (ev) => {
     const form = e.closest('form');
 
-    reset(form);
+    reset(form, e.hasAttribute('name') ? `[name="${ e.getAttribute('name') }"]` : null);
 
     form.dispatchEvent(new Event('submit', { bubbles: true }));
 

@@ -91,6 +91,8 @@ class Context {
           return $this->path;
         case '@params':
           return $this->params;
+        case '@cookies':
+          return $this->cookies;
       }
             
     }
