@@ -113,11 +113,17 @@ function renderElement($e, &$context, callable $children = null) {
 
       foreach ($e->attributes as $key => $attr) {
 
-        if ($key == $attr->value) {
+        if ($key == $attr->value || $key == ':name') {
           continue;
         }
 
-        $context->bind($key, fn() => value($context, $attr->value) ?? $attr->value);
+        $v = checkBinding($attr->value, $context) ?? $attr->value;
+
+        if ($v === $attr->value) {
+          $v = value($context, $attr->value) ?? $attr->value;
+        }
+
+        $context->bind($key, fn() => $v);
       }
 
       render($fragment, $context, function () use (&$e, &$context, &$children) {
@@ -128,7 +134,7 @@ function renderElement($e, &$context, callable $children = null) {
 
       foreach ($e->attributes as $key => $attr) {
 
-        if ($key == $attr->value) {
+        if ($key == $attr->value || $key == ':name') {
           continue;
         }
         
