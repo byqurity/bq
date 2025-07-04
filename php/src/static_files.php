@@ -89,6 +89,7 @@ function localFetch(Context $context, $webDir = null) {
     $hash          = md5_file($file);
     $formattedTime = gmdate('D, d M Y H:i:s \G\M\T', $lastModified);
     $size          = filesize($file);
+    $headers       = [];
     
     if (str_starts_with($mimeType, 'image/') && ($context->query('type') != null || $context->query('width') != null || $context->query('height') != null)) {
       $image  = imagecreatefromstring(file_get_contents($file));
@@ -98,13 +99,13 @@ function localFetch(Context $context, $webDir = null) {
       $cache  = sys_get_temp_dir() . '/' . $hash . "." . $width . "x" . $height . '.' . $type;
       $age    = is_file($cache) ? time() - filemtime($cache) : null;
 
-      header('content-type: image/' . $type);
-
+      $mimeType = 'image/' . $type;
+      
       if (is_file($cache)) {
-        header('cache-status: HIT');
+        $headers['cache-status'] = 'HIT';
       } else {
-        header('cache-status: ' . 'MISS');
-        header('age: ' . $age ?: 0);
+        $headers['cache-status'] = 'MISS';
+        $headers['age'] = $age ?: 0;
         
         imagepalettetotruecolor($image);
   
@@ -139,32 +140,49 @@ function localFetch(Context $context, $webDir = null) {
 
       $file = $cache;
       $size = filesize($file);
-    } else {
-      header('content-type: ' . $mimeType);
-    }
+    } 
 
-    header('Cache-Control: ' . $cacheControl);
-    header('ETag: W/"'       . $hash . '"');
-    header('Last-Modified: ' . $formattedTime);
+    $headers['content-type']  = $mimeType;
+    $headers['Cache-Control'] = $cacheControl;
+    $headers['ETag']          = 'W/"' . $hash . '"';
+    $headers['Last-Modified'] = $formattedTime;
+    $headers['Accept-Ranges'] = 'bytes';
+
+    $writeHeaders = function() use (&$headers) {
+      foreach ($headers as $k => $v) {
+        header("$k: $v");
+      }
+    };
 
     if ((isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $_SERVER['HTTP_IF_MODIFIED_SINCE'] === $formattedTime) || 
         (isset($_SERVER['HTTP_IF_NONE_MATCH']) && $_SERVER['HTTP_IF_NONE_MATCH'] === 'W/"' . $hash . '"')) {
       header('HTTP/1.1 304 Not Modified');
+
+      $writeHeaders();
+
     } else if (isset($_SERVER['HTTP_RANGE']) && preg_match('/bytes=(\d+)-(\d*)/', $_SERVER['HTTP_RANGE'], $matches)) {
       $start  = intval($matches[1]);
       $end    = $matches[2] !== '' ? intval($matches[2]) : $size - 1;
       $length = $end - $start + 1;
 
       header('HTTP/1.1 206 Partial Content');
-      header("Content-Range: bytes $start-$end/$size");
-      header('Content-Length: ' . $length);
+
+      $headers['Content-Range']  = "bytes $start-$end/$size";
+      $headers['Content-Length'] = $length;
+
+      $writeHeaders();
 
       $fh = fopen($file, 'rb');
       fseek($fh, $start);
       echo fread($fh, $length);
       fclose($fh);
     } else {
-      header('Content-Length: ' . $size);
+      header('HTTP/1.1 200 OK');
+
+      $headers['Content-Length'] = $size;
+
+      $writeHeaders();
+
       readfile($file);
     }
 
