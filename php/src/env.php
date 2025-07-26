@@ -14,6 +14,8 @@ function addEnvFile($envFile) {
         $v = trim(substr($line, $i + 1));
 
         $_ENV[$k] = $v;
+
+        putenv("$k=$v");
       }
     }
     
