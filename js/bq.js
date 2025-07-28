@@ -27,9 +27,12 @@ const sync = (key, value, attributes = []) => {
 }
 
 export const dom = (html = '') => {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const template = document.createElement('template');
+  template.innerHTML = html;
 
-  for (const node of doc.querySelectorAll('[data-sync]')) {
+  const fragment = template.content;
+
+  for (const node of fragment.querySelectorAll('[data-sync]')) {
     sync(
       node.dataset.sync, node.textContent, 
       Array.from(node.attributes).filter(
@@ -43,7 +46,7 @@ export const dom = (html = '') => {
     );
   }
 
-  for (const update of doc.querySelectorAll('node-update')) {
+  for (const update of fragment.querySelectorAll('node-update')) {
     const nodes = document.querySelectorAll(update.dataset.select);
 
     for (const node of nodes) {
@@ -70,7 +73,7 @@ export const dom = (html = '') => {
     }    
   }
 
-  return doc;
+  return fragment;
 }
 
 /** -- */
