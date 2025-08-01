@@ -141,6 +141,17 @@ hook('[data-trigger]', (e) => {
   
 });
 
+hook('[data-async]', async (e) => {
+  
+  const response = await fetch(e.dataset.async, {
+    headers: {
+      'accept': 'text/html'
+    }
+  });
+
+  response.ok && e.append(dom(await response.text()));
+});
+
 hook('form', (e) => {
   const select  = e.dataset.select,
         append  = e.dataset.append,
