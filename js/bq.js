@@ -1,6 +1,26 @@
-const hooks = {}, hooked = new WeakMap(), pending = {};
+const hooks    = {}, 
+      hooked   = new WeakMap(), 
+      pending  = {};
 
 document.startViewTransition ??= (func) => func();
+
+const visiblilityObserver = new IntersectionObserver((intersections) => {
+  for (const node of intersections) {
+    node.isIntersecting && node.target.dispatchEvent(new CustomEvent(':visible'));
+  }
+});
+
+export const lazy = (node) => {
+  return new Promise((resolve) => {
+
+    node.addEventListener(':visible', () => {
+      resolve();
+      visiblilityObserver.unobserve(node);
+    }, { once: true });
+    
+    visiblilityObserver.observe(node);
+  });
+}
 
 export const hook = (selector = '', hook = (e) => null) => {
 
@@ -141,15 +161,19 @@ hook('[data-trigger]', (e) => {
   
 });
 
-hook('[data-async]', async (e) => {
-  
-  const response = await fetch(e.dataset.async, {
-    headers: {
-      'accept': 'text/html'
-    }
-  });
+hook('[data-async]', (e) => {
 
-  response.ok && e.append(dom(await response.text()));
+  const load = async () => {
+    const response = await fetch(e.dataset.async, {
+      headers: {
+        'accept': 'text/html'
+      }
+    });
+
+    response.ok && e.append(dom(await response.text()));
+  }
+  
+  e.hasAttribute('data-lazy') ? lazy(e).then(load) : load();
 });
 
 hook('form', (e) => {
