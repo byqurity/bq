@@ -103,7 +103,12 @@ const call = (e, hooks = []) => {
 
   for (const hook of hooks) {
     if (!done.includes(hook)) {
-      hook(e);
+
+      if (e.hasAttribute('data-lazy')) {
+        lazy(e).then(() => hook(e));
+      } else {
+        hook(e);
+      }
 
       done.push(hook);
       hooked.set(e, done);
@@ -161,19 +166,15 @@ hook('[data-trigger]', (e) => {
   
 });
 
-hook('[data-async]', (e) => {
+hook('[data-async]', async (e) => {
 
-  const load = async () => {
-    const response = await fetch(e.dataset.async, {
-      headers: {
-        'accept': 'text/html'
-      }
-    });
+  const response = await fetch(e.dataset.async, {
+    headers: {
+      'accept': 'text/html'
+    }
+  });
 
-    response.ok && e.append(dom(await response.text()));
-  }
-  
-  e.hasAttribute('data-lazy') ? lazy(e).then(load) : load();
+  response.ok && e.append(dom(await response.text()));
 });
 
 hook('form', (e) => {
