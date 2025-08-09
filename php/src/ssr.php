@@ -10,12 +10,12 @@ function value(&$context, $value) {
 
   if ($value[0] == '!') {
     return (bool) !value($context, ltrim($value, '!'));
-  } else if (str_contains($value, '?')) {
+  } else if (str_contains($value, '?') && str_contains($value, ':')) {
     $p1 = explode('?', $value);
     $p2 = explode(':', $p1[1]);
     
     return value($context, $p1[0]) ? value($context, $p2[0]) : value($context, $p2[1]);
-  } else if (preg_match('/(?<left>.+?)(?<operator>[><=!]+)(?<right>.+)/', $value, $matches)) {
+  } else if (preg_match('/(?<left>.+?)(?<operator>[><=!?]+)(?<right>.+)/', $value, $matches)) {
     $a = value($context, $matches['left']);
     $b = value($context, $matches['right']);
 
@@ -32,6 +32,8 @@ function value(&$context, $value) {
         return $a == $b;
       case '!=':
         return $a != $b;
+      case '??':
+        return $a ?? $b;
     }
 
   } else if (str_contains($value, '|')) {
