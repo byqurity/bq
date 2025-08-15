@@ -35,7 +35,7 @@ function value(&$context, $value) {
       case '??':
         return $a ?? $b;
       case '~':
-        return preg_match("/$b/", $a) ? true : false;
+        return preg_match("/" . preg_quote($b, '/') . "/", $a) ? true : false;
     }
 
   } else if (str_contains($value, '|')) {
