@@ -16,7 +16,8 @@
       "src/database.php",
       "src/router.php",
       "src/ssr.php",
-      "src/static_files.php"
+      "src/static_files.php",
+      "src/cache.php"
     ]
   },
   "license": "MIT",
