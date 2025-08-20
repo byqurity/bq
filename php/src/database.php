@@ -26,6 +26,9 @@ function query(string $query, $params = null) {
       $connection = new PDO("sqlite:$dbName");
       $connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
+
+    $connection->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
+    $connection->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
   }
 
   if (preg_match_all('/:([a-zA-Z0-9_]+)/', $query, $matches)) {
@@ -51,10 +54,12 @@ function query(string $query, $params = null) {
     $list = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     foreach ($list as &$e) {
+
       foreach ($e as $k => $v) {
+
         if (is_string($v) && ((str_starts_with(ltrim($v), '{') && str_ends_with(rtrim($v), '}')) || str_starts_with(ltrim($v), '[') && str_ends_with(rtrim($v), ']'))) {
           $e[$k] = json_decode($v, true);
-        }
+        } 
       }
     }
 
