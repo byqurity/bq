@@ -52,7 +52,7 @@ function query(string $query, $params = null) {
     
     foreach ($list as &$e) {
       foreach ($e as $k => $v) {
-        if (is_string($v) && ((str_starts_with($v, '{') && str_ends_with($v, '}')) || str_starts_with($v, '[') && str_ends_with($v, ']'))) {
+        if (is_string($v) && ((str_starts_with(ltrim($v), '{') && str_ends_with(rtrim($v), '}')) || str_starts_with(ltrim($v), '[') && str_ends_with(rtrim($v), ']'))) {
           $e[$k] = json_decode($v, true);
         }
       }
