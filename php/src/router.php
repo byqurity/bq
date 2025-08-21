@@ -41,6 +41,8 @@ function route(
 }
 
 function mimeTypesMatch(string $mimeTypes, string $mimeType): bool {
+  $mimeTypes = preg_replace("/\s+/", '', $mimeTypes);
+
   foreach (explode(',', $mimeTypes) as $type) {
     list($t1, $st1) = explode('/', explode(';', $type)[0] . '/');
     list($t2, $st2) = explode('/', $mimeType . '/');
@@ -49,6 +51,7 @@ function mimeTypesMatch(string $mimeTypes, string $mimeType): bool {
       return true;
     }
   }
+
   return false;
 }
 
