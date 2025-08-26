@@ -213,29 +213,29 @@ function renderElement($e, &$context, callable $children = null) {
   }
 }
 
-function render($path, &$context, callable $children = null) {
+function render($html, &$context, ?callable $children = null) {
   static $documentCache = [];
 
-  $path = str_contains($path, '.') ? $path : ('web/fragments/' . $path . '.fragment.html');
+  $file = preg_match('/\.[a-z0-9A-Z]{1,4}/', $html) ? $html : ('web/fragments/' . $html . '.fragment.html');
 
-  if (!isset($documentCache[$path])) {
+  if (!isset($documentCache[$file])) {
     libxml_use_internal_errors(true);
     
-    $html = '<?xml version="1.0" encoding="utf-8"?>' . file_get_contents($path);
+    $html = '<?xml version="1.0" encoding="utf-8"?>' . (is_file($file) ? file_get_contents($file) : $html);
 
-    $documentCache[$path] = new DOMDocument('1.0', 'UTF-8');
+    $documentCache[$file] = new DOMDocument('1.0', 'UTF-8');
     
-    $documentCache[$path]->encoding = 'UTF-8';
-    $documentCache[$path]->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_COMPACT | LIBXML_HTML_NODEFDTD);
+    $documentCache[$file]->encoding = 'UTF-8';
+    $documentCache[$file]->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_COMPACT | LIBXML_HTML_NODEFDTD);
 
-    if ($documentCache[$path]->doctype) {
-      echo '<!DOCTYPE ' . $documentCache[$path]->doctype->name . '>' . PHP_EOL;
+    if ($documentCache[$file]->doctype) {
+      echo '<!DOCTYPE ' . $documentCache[$file]->doctype->name . '>' . PHP_EOL;
     }
     
     libxml_clear_errors();
   }
 
-  foreach ($documentCache[$path]->childNodes as $child) {
+  foreach ($documentCache[$file]->childNodes as $child) {
     renderElement($child, $context, $children);
   }
 
