@@ -52,6 +52,24 @@ export const dom = (html = '') => {
 
   const fragment = template.content;
 
+  for (const node of fragment.querySelectorAll('[data-response][type="application/json"]')) {
+    const e = JSON.parse(node.textContent);
+
+    for (const k in e) {
+
+      for (const n of document.querySelectorAll(k)) {
+        
+        if (e[k].attributes) {
+          for (const a in e[k].attributes) {
+            const v = e[k].attributes[a];
+
+            v === null ? n.removeAttribute(a) : n.setAttribute(a, v);
+          }
+        }
+      }
+    }
+  }
+
   for (const node of fragment.querySelectorAll('[data-sync]')) {
     sync(
       node.dataset.sync, node.textContent, 
@@ -311,6 +329,10 @@ hook('form', (e) => {
       if (url.pathname == location.pathname) {
         window.history.replaceState(null, null, url);
       }     
+    }
+
+    if (e.hasAttribute('data-reset')) {
+      e.reset();
     }
 
     document.startViewTransition(() => {
