@@ -174,8 +174,19 @@ function localFetch(Context $context, $webDir = null) {
 
       $fh = fopen($file, 'rb');
       fseek($fh, $start);
-      echo fread($fh, $length);
+
+      $bytesLeft = $length;
+      $chunkSize = 4 * 1024 * 1024;
+
+      while ($bytesLeft > 0 && !feof($fh)) {
+        $readSize = min($chunkSize, $bytesLeft);
+        echo fread($fh, $readSize);
+        flush();
+        $bytesLeft -= $readSize;
+      }
+
       fclose($fh);
+
     } else {
       header('HTTP/1.1 200 OK');
 
