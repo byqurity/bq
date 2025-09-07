@@ -215,8 +215,10 @@ function renderElement($e, &$context, callable $children = null) {
 
 function render($html, &$context, ?callable $children = null) {
   static $documentCache = [];
-
-  $file = preg_match('/\.[a-z0-9A-Z]{1,4}/', $html) ? $html : ('web/fragments/' . $html . '.fragment.html');
+  
+  $fragmentsDir = $_ENV['WEB_FRAGMENTS'] ?? 'web/fragments/';
+  $path         = ($fragmentsDir . $html . '.fragment.html');
+  $file         = is_file($path) ? $path : $html;
 
   if (!isset($documentCache[$file])) {
     libxml_use_internal_errors(true);
