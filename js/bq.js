@@ -231,22 +231,19 @@ hook('form', (e) => {
       for (let i = 0, k; i < parts.length; i++) {
         k = parts[i];
 
-        if (i == parts.length -1) {
+        if (k.endsWith('[]')) {
+          k = k.replace('[]', '');
 
-         if (Array.isArray(d[k])) {
-            d[k].push(v);
-          } else if (d[k]) {
-            d[k] = [d[k]];
+          d[k] ??= [];
+        }
 
-            d[k].push(v);
-          } else {
-            d[k] = v;
-          }
+        if (i < parts.length - 1) {
+          d[k] ??= k.endsWith('[]') ? [] : {};
+        } else {
+          Array.isArray(d[k]) ? d[k].push(v) : d[k] = v;
+        }
 
-          continue;
-        } 
-
-        d[k] = {};
+        d = d[k];
       }
     }
 

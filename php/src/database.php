@@ -33,13 +33,16 @@ function query(string $query, $params = null) {
 
   if (preg_match_all('/:([a-zA-Z0-9_]+)/', $query, $matches)) {
     $stmt = $connection->prepare($query);
+
     foreach ($params as $name => $value) {
       $type = is_int($value) ? PDO::PARAM_INT : (is_bool($value) ? PDO::PARAM_BOOL : PDO::PARAM_STR);
       $stmt->bindValue(':' . $name, $value, $type);
     }
+
   } else {
     $stmt = $connection->prepare($query);
     $pos = 1;
+
     foreach ($params as $value) {
       $type = is_int($value) ? PDO::PARAM_INT : (is_bool($value) ? PDO::PARAM_BOOL : PDO::PARAM_STR);
       $stmt->bindValue($pos++, $value, $type);
@@ -47,7 +50,7 @@ function query(string $query, $params = null) {
   }
 
   if (!$stmt->execute()) {
-    return ['error' => $stmt->errorInfo()];
+    return (object) ['error' => $stmt->errorInfo()];
   }
   
   if (strpos(ltrim($query), 'SELECT') === 0 || strpos(ltrim($query), 'RETURNING') !== false) {
