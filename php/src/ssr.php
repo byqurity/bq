@@ -1,5 +1,32 @@
 <?php
 
+function isQuoted(string $str): bool {
+  $len = strlen($str);
+  $qts = ['"', '\''];
+  $qs  = null;
+
+  for ($i = 0; $i < $len; $i++) {
+    $c = $str[$i];
+
+    if ($i == 0 && !in_array($c, $qts)) {
+      return false;
+    }
+
+    if ($i == $len - 1 && $c != $qs) {
+      return false;
+    }
+
+    if ($i == 0) {
+      $qs = $c;
+    }
+
+    if ($c == '\\') {
+      $i++; continue;
+    }
+  }
+
+  return true;
+}
 
 function value(&$context, $value) {
   $value = trim($value);
@@ -10,7 +37,9 @@ function value(&$context, $value) {
 
   if ($value[0] == '!') {
     return (bool) !value($context, ltrim($value, '!'));
-  } else if (str_contains($value, '?') && str_contains($value, ':')) {
+  } else if (isQuoted($value)) {
+    return trim($value, '\'"');
+  }else if (str_contains($value, '?') && str_contains($value, ':')) {
     $p1 = explode('?', $value);
     $p2 = explode(':', $p1[1]);
     
@@ -50,8 +79,6 @@ function value(&$context, $value) {
 
     return $v;
     
-  } else if ($value[0] == '\'' || $value[0] == '"') {
-    return trim($value, '\'"');
   } else if (is_numeric($value)) {
     return (float) $value;
   } else if (str_contains($value, '.')) {
