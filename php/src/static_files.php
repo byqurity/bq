@@ -83,13 +83,45 @@ function localFetch(Context $context, $webDir = null) {
       'eot' => 'application/vnd.ms-fontobject'
     ];
     
+    error_log('GET ' . $context->path);
+    
     $mimeType      = ($mimeTypes[$ext] ?? 'application/octet-stream');
     $cacheControl  = $_ENV['WEB_CACHE'] ?? 'public, max-age=3600';
     $lastModified  = filemtime($file);
-    $hash          = md5_file($file);
     $formattedTime = gmdate('D, d M Y H:i:s \G\M\T', $lastModified);
+    $hash          = md5($formattedTime);
     $size          = filesize($file);
     $headers       = [];
+
+    $headers['content-type']  = $mimeType;
+    $headers['Cache-Control'] = $cacheControl;
+    $headers['ETag']          = 'W/"' . $hash . '"';
+    $headers['Last-Modified'] = $formattedTime;
+    $headers['Accept-Ranges'] = 'bytes';
+    $headers['Date'] = gmdate('D, d M Y H:i:s') . ' GMT';
+
+    $writeHeaders = function() use (&$headers) {
+      foreach ($headers as $k => $v) {
+        header("$k: $v");
+      }
+    };
+
+    $hasRange      = isset($_SERVER['HTTP_RANGE']);
+    $ifRange       = $_SERVER['HTTP_IF_RANGE'] ?? null;
+    $ifNone        = $_SERVER['HTTP_IF_NONE_MATCH'] ?? null;
+    $ifSince       = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? null;
+    $isConditional = $ifNone || $ifSince;
+    $isModified    = !(($ifNone && $ifNone === 'W/"' . $hash . '"') || ($ifSince && $ifSince === $formattedTime));
+
+    if (!$isModified) {
+      header('HTTP/1.1 304 Not Modified');
+      $writeHeaders();
+      exit;
+    }
+
+    if ($hasRange && $ifRange && $ifRange !== 'W/"' . $hash . '"' && $ifRange !== $formattedTime) {
+      unset($_SERVER['HTTP_RANGE']);
+    }
     
     if (str_starts_with($mimeType, 'image/') && ($context->query('type') != null || $context->query('width') != null || $context->query('height') != null)) {
       $image  = imagecreatefromstring(file_get_contents($file));
@@ -97,15 +129,14 @@ function localFetch(Context $context, $webDir = null) {
       $width  = $context->query('width')  != null ? (int) $context->query('width')  : imagesx($image);
       $height = $context->query('height') != null ? (int) $context->query('height') : imagesy($image);
       $cache  = sys_get_temp_dir() . '/' . $hash . "." . $width . "x" . $height . '.' . $type;
-      $age    = is_file($cache) ? time() - filemtime($cache) : null;
+      $age    = is_file($cache) ? time() - filemtime($cache) : 0;
 
-      $mimeType = 'image/' . $type;
+      $headers['content-type'] = 'image/' . $type;
       
-      if (is_file($cache)) {
-        $headers['cache-status'] = 'HIT';
+      if (is_file($cache) && !$isModified) {
+        $headers['Cache-Status'] = 'INTERN; HIT; age="' . $age . '"';
       } else {
-        $headers['cache-status'] = 'MISS';
-        $headers['age'] = $age ?: 0;
+        $headers['Cache-Status'] = 'INTERN; ' . ($isConditional ? 'REVALIDATED' : 'MISS') . '; age="' . $age . '"';
         
         imagepalettetotruecolor($image);
   
@@ -142,33 +173,19 @@ function localFetch(Context $context, $webDir = null) {
       $size = filesize($file);
     } 
 
-    $headers['content-type']  = $mimeType;
-    $headers['Cache-Control'] = $cacheControl;
-    $headers['ETag']          = 'W/"' . $hash . '"';
-    $headers['Last-Modified'] = $formattedTime;
-    $headers['Accept-Ranges'] = 'bytes';
-
-    $writeHeaders = function() use (&$headers) {
-      foreach ($headers as $k => $v) {
-        header("$k: $v");
-      }
-    };
-
-    if ((isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $_SERVER['HTTP_IF_MODIFIED_SINCE'] === $formattedTime) || 
-        (isset($_SERVER['HTTP_IF_NONE_MATCH']) && $_SERVER['HTTP_IF_NONE_MATCH'] === 'W/"' . $hash . '"')) {
-      header('HTTP/1.1 304 Not Modified');
-
-      $writeHeaders();
-
-    } else if (isset($_SERVER['HTTP_RANGE']) && preg_match('/bytes=(\d+)-(\d*)/', $_SERVER['HTTP_RANGE'], $matches)) {
+    if (isset($_SERVER['HTTP_RANGE']) && preg_match('/bytes=(\d+)-(\d*)/', $_SERVER['HTTP_RANGE'], $matches)) {
       $start  = intval($matches[1]);
       $end    = $matches[2] !== '' ? intval($matches[2]) : $size - 1;
       $length = $end - $start + 1;
+
+      error_log('  -> Range: ' . $_SERVER['HTTP_RANGE']);
 
       header('HTTP/1.1 206 Partial Content');
 
       $headers['Content-Range']  = "bytes $start-$end/$size";
       $headers['Content-Length'] = $length;
+
+      error_log('  -> 206');
 
       $writeHeaders();
 
@@ -180,15 +197,24 @@ function localFetch(Context $context, $webDir = null) {
 
       while ($bytesLeft > 0 && !feof($fh)) {
         $readSize = min($chunkSize, $bytesLeft);
-        echo fread($fh, $readSize);
-        flush();
+        $bytes      = fread($fh, $readSize);
+
+        echo $bytes;
+        
         $bytesLeft -= $readSize;
+
+        error_log('  >> ' . $readSize . ' bytes');
+
+        ob_flush();
+        flush();
       }
 
       fclose($fh);
 
     } else {
       header('HTTP/1.1 200 OK');
+
+      error_log('  -> 200');
 
       $headers['Content-Length'] = $size;
 

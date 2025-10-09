@@ -113,13 +113,15 @@ function checkBinding($str, &$context) {
 function renderElement($e, &$context, callable $children = null) {
   static $selfClosedTags = ['show', 'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'];
 
+  $node = str_replace('bq:', '', $e->nodeName);
+
   if ($e instanceof DOMElement) {
 
-    if ($e->nodeName == 'show' && value($context, checkBinding($e->getAttribute('when'), $context)) == false) {
+    if ($node == 'show' && value($context, checkBinding($e->getAttribute('when'), $context)) == false) {
       return;
-    } else if ($e->nodeName == 'children' && $children != null) {
+    } else if ($node == 'children' && $children != null) {
       echo $children();
-    } else if ($e->nodeName == 'scope') {
+    } else if ($node == 'scope') {
 
       foreach ($e->attributes as $key => $attr) {
         $v = checkBinding($attr->value, $context) ?? $attr->value;
@@ -139,7 +141,7 @@ function renderElement($e, &$context, callable $children = null) {
         $context->unbind($key);
       }
 
-    } else if ($e->nodeName == 'fragment') {
+    } else if ($node == 'fragment') {
       $fragment = checkBinding($e->getAttribute(':name'), $context);
 
       foreach ($e->attributes as $key => $attr) {
@@ -172,7 +174,7 @@ function renderElement($e, &$context, callable $children = null) {
         $context->unbind($key);
       }
 
-    } else if ($e->nodeName == 'for') {
+    } else if ($node == 'for') {
       $each      = value($context, checkBinding($e->getAttribute('each'), $context));
       $nameIndex = $e->hasAttribute('index') ? $e->getAttribute('index') : '@i';
       $nameValue = $e->hasAttribute('as') ? $e->getAttribute('as') : '@v';
@@ -202,7 +204,7 @@ function renderElement($e, &$context, callable $children = null) {
 
     } else {
 
-      if ($e->nodeName != 'show') {
+      if ($node != 'show') {
         echo '<' . $e->nodeName;
   
         foreach ($e->attributes as $attrName => $attrValue) {
