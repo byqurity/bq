@@ -156,6 +156,8 @@ const reset = (form, select = 'input,select,textarea,[name]') => {
   }
 }
 
+hook('[data-sync]', (e) => sync(e.dataset.sync, e.textContent));
+
 hook('[type="reset"]', (e) => {
 
   e.addEventListener('click', (ev) => {
