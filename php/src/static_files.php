@@ -89,7 +89,7 @@ function localFetch(Context $context, $webDir = null) {
     $cacheControl  = $_ENV['WEB_CACHE'] ?? 'public, max-age=3600';
     $lastModified  = filemtime($file);
     $formattedTime = gmdate('D, d M Y H:i:s \G\M\T', $lastModified);
-    $hash          = md5($formattedTime);
+    $hash          = md5($context->path . $formattedTime);
     $size          = filesize($file);
     $headers       = [];
 
@@ -98,7 +98,6 @@ function localFetch(Context $context, $webDir = null) {
     $headers['ETag']          = 'W/"' . $hash . '"';
     $headers['Last-Modified'] = $formattedTime;
     $headers['Accept-Ranges'] = 'bytes';
-    $headers['Date'] = gmdate('D, d M Y H:i:s') . ' GMT';
 
     $writeHeaders = function() use (&$headers) {
       foreach ($headers as $k => $v) {
@@ -128,12 +127,12 @@ function localFetch(Context $context, $webDir = null) {
       $type   = $context->query('type') ?: $ext;
       $width  = $context->query('width')  != null ? (int) $context->query('width')  : imagesx($image);
       $height = $context->query('height') != null ? (int) $context->query('height') : imagesy($image);
-      $cache  = sys_get_temp_dir() . '/' . $hash . "." . $width . "x" . $height . '.' . $type;
+      $cache  = $_ENV['CACHE_DIR'] . '/' . $hash . "." . $width . "x" . $height . '.' . $type;
       $age    = is_file($cache) ? time() - filemtime($cache) : 0;
 
       $headers['content-type'] = 'image/' . $type;
       
-      if (is_file($cache) && !$isModified) {
+      if (is_file($cache)) {
         $headers['Cache-Status'] = 'INTERN; HIT; age="' . $age . '"';
       } else {
         $headers['Cache-Status'] = 'INTERN; ' . ($isConditional ? 'REVALIDATED' : 'MISS') . '; age="' . $age . '"';

@@ -2,7 +2,7 @@
 
 function cache(string $key, callable $fn, ?int $ttl = null, ?callable $status = null) {
   $encoding  = $_ENV['CACHE_TYPE'] ?? 'serialized';
-  $directory = sys_get_temp_dir(). '/cache';
+  $directory = $_ENV['CACHE_DIR']. '/cache';
   $file      = $directory . '/' . $key . '.' . $encoding;
   $ttl     ??= (int) $_ENV['CACHE_TTL'] ?? 0;
   $data      = null;
@@ -31,4 +31,10 @@ function cache(string $key, callable $fn, ?int $ttl = null, ?callable $status = 
   }
 
   return $data;
+}
+
+$_ENV['CACHE_DIR'] ??= sys_get_temp_dir();
+
+if (!is_dir($_ENV['CACHE_DIR'])) {
+  mkdir($_ENV['CACHE_DIR'], 0770, true);
 }
