@@ -185,14 +185,33 @@ hook('[data-trigger]', (e) => {
 });
 
 hook('[data-async]', async (e) => {
+  const url = new URL(e.dataset.async.replace('[...?]', ''), location.href);
 
-  const response = await fetch(e.dataset.async, {
+  if (e.dataset.async.includes('[...?]')) {
+    new URLSearchParams(location.search).forEach(
+      (v, k) => url.searchParams.set(k, v)
+    );
+  }
+
+  const response = await fetch(url, {
     headers: {
       'accept': 'text/html'
     }
   });
 
-  response.ok && e.append(dom(await response.text()));
+  if (response.ok) {
+    let d = dom(await response.text());
+
+    if (e.dataset.select) {
+      d = d.querySelectorAll(e.dataset.select);
+    }
+
+    if (e.dataset.replace) {
+      document.querySelector(e.dataset.replace).replaceWith(...d);
+    } else {
+      e.append(d);
+    }
+  }
 });
 
 hook('form', (e) => {
