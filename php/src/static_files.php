@@ -83,8 +83,6 @@ function localFetch(Context $context, $webDir = null) {
       'eot' => 'application/vnd.ms-fontobject'
     ];
     
-    error_log('GET ' . $context->path);
-    
     $mimeType      = ($mimeTypes[$ext] ?? 'application/octet-stream');
     $cacheControl  = $_ENV['WEB_CACHE'] ?? 'public, max-age=3600';
     $lastModified  = filemtime($file);
@@ -123,20 +121,22 @@ function localFetch(Context $context, $webDir = null) {
     }
     
     if (str_starts_with($mimeType, 'image/') && ($context->query('type') != null || $context->query('width') != null || $context->query('height') != null)) {
-      $image  = imagecreatefromstring(file_get_contents($file));
       $type   = $context->query('type') ?: $ext;
-      $width  = $context->query('width')  != null ? (int) $context->query('width')  : imagesx($image);
-      $height = $context->query('height') != null ? (int) $context->query('height') : imagesy($image);
-      $cache  = $_ENV['CACHE_DIR'] . '/' . $hash . "." . $width . "x" . $height . '.' . $type;
+      $key    = sha1($hash . "." . ($context->query('width') ?? '-') . "x" . ($context->query('height') ?? '-') . '.' . $type);
+      $cache  = $_ENV['CACHE_DIR'] . '/' . $key;
       $age    = is_file($cache) ? time() - filemtime($cache) : 0;
-
+      
       $headers['content-type'] = 'image/' . $type;
       
       if (is_file($cache)) {
-        $headers['Cache-Status'] = 'INTERN; HIT; age="' . $age . '"';
+        $headers['Cache-Status'] = 'HIT; age="' . $age . '"; key="' . $key . '"';
       } else {
-        $headers['Cache-Status'] = 'INTERN; ' . ($isConditional ? 'REVALIDATED' : 'MISS') . '; age="' . $age . '"';
+        $headers['Cache-Status'] = ($isConditional ? 'REVALIDATED' : 'MISS') . '; age="' . $age . '"; key="' . $key . '"';
         
+        $image  = imagecreatefromstring(file_get_contents($file));
+        $width  = $context->query('width')  != null ? (int) $context->query('width')  : imagesx($image);
+        $height = $context->query('height') != null ? (int) $context->query('height') : imagesy($image);
+
         imagepalettetotruecolor($image);
   
         if (imagesx($image) > $width) {
@@ -168,8 +168,12 @@ function localFetch(Context $context, $webDir = null) {
         imagedestroy($image);
       }
 
-      $file = $cache;
-      $size = filesize($file);
+      $size_ = filesize($cache);
+
+      if ($size_ > 0) {
+        $file = $cache;
+        $size = $size_;
+      }
     } 
 
     if (isset($_SERVER['HTTP_RANGE']) && preg_match('/bytes=(\d+)-(\d*)/', $_SERVER['HTTP_RANGE'], $matches)) {
@@ -177,14 +181,10 @@ function localFetch(Context $context, $webDir = null) {
       $end    = $matches[2] !== '' ? intval($matches[2]) : $size - 1;
       $length = $end - $start + 1;
 
-      error_log('  -> Range: ' . $_SERVER['HTTP_RANGE']);
-
       header('HTTP/1.1 206 Partial Content');
 
       $headers['Content-Range']  = "bytes $start-$end/$size";
       $headers['Content-Length'] = $length;
-
-      error_log('  -> 206');
 
       $writeHeaders();
 
@@ -202,8 +202,6 @@ function localFetch(Context $context, $webDir = null) {
         
         $bytesLeft -= $readSize;
 
-        error_log('  >> ' . $readSize . ' bytes');
-
         ob_flush();
         flush();
       }
@@ -212,8 +210,6 @@ function localFetch(Context $context, $webDir = null) {
 
     } else {
       header('HTTP/1.1 200 OK');
-
-      error_log('  -> 200');
 
       $headers['Content-Length'] = $size;
 

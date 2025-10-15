@@ -8,7 +8,7 @@ const visiblilityObserver = new IntersectionObserver((intersections) => {
   for (const node of intersections) {
     node.isIntersecting && node.target.dispatchEvent(new CustomEvent(':visible'));
   }
-});
+}, { rootMargin: '256px' });
 
 export const lazy = (node) => {
   return new Promise((resolve) => {
