@@ -7,7 +7,7 @@ function cache(string $key, callable $fn, ?int $ttl = null, ?callable $status = 
   $data      = null;
   $status  ??= fn($status) => error_log('Cache-Status: ' . $status . ' [' . $key . ']');
 
-  if ($ttl === 0 || !is_file($file) || (time() - filemtime($file)) < $ttl) {
+  if ($ttl === 0 || !is_file($file) || ((time() - filemtime($file)) > $ttl)) {
     $data = $fn();
 
     $status(!is_file($file) ? 'MISS' : 'REVALIDATED');
