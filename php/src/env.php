@@ -23,12 +23,23 @@ function addEnvFile($envFile) {
   }
 }
 
-addEnvFile('.env');
-addEnvFile('.env.local');
 
-if (!empty($_ENV['ENVIRONMENT'])) {
-  $env = strtolower($_ENV['ENVIRONMENT']);
+function environment() {
+  
+  while (!is_file(getcwd() . '/composer.json')) {
+    chdir('../');
+  }
 
-  addEnvFile(".env.$env");
-  addEnvFile(".env.$env.local");
+  addEnvFile('.env');
+  addEnvFile('.env.local');
+  
+  if (!empty($_ENV['ENVIRONMENT'])) {
+    $env = strtolower($_ENV['ENVIRONMENT']);
+  
+    addEnvFile(".env.$env");
+    addEnvFile(".env.$env.local");
+  }
 }
+
+
+environment();

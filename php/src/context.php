@@ -95,6 +95,8 @@ class Context {
           return $this->cookies;
         case '@headers':
           return $this->headers;
+        case '@host':
+          return $this->host;
       }
             
     }
