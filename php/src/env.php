@@ -26,7 +26,8 @@ function addEnvFile($envFile) {
 
 function environment() {
   
-  while (!is_file(getcwd() . '/composer.json')) {
+  // Apache FIX
+  while (!is_dir(getcwd() . '/vendor')) {
     chdir('../');
   }
 
