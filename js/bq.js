@@ -389,3 +389,36 @@ hook('form', (e) => {
 
   });
 });
+
+export const node = (options = {}) => {
+  const n = document.createElement(options.tag),
+        c = options.children || [];
+
+  if (options.dataset) {
+    Object.assign(n.dataset, options.dataset);
+  }
+
+  if (options.text || options.textContent) {
+    n.textContent = options.text || options.textContent;
+  }
+
+  if (options.html || options.innerHTML) {
+    n.innerHTML = options.html || options.innerHTML;
+  }
+
+  delete options.innerHTML;
+  delete options.textContent;
+  delete options.html;
+  delete options.tag;
+  delete options.text;
+  delete options.children;
+  delete options.dataset;
+
+  for (const k in options) {
+    n.setAttribute(k, options[k]);
+  }
+
+  n.append(...c.map(node));
+
+  return n;
+}
