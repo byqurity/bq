@@ -237,7 +237,7 @@ function renderElement($e, &$context, callable $children = null) {
         echo '</' . $e->nodeName . '>';
       }
     }
-  } if ($e instanceof DOMText) {
+  } else if ($e instanceof DOMText) {
     echo checkBinding($e->data, $context);
   }
 }
