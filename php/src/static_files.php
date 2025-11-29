@@ -140,32 +140,23 @@ function localFetch(Context $context, $webDir = null) {
         imagepalettetotruecolor($image);
   
         if (imagesx($image) > $width) {
-          $height = imagesy($image) * $width / imagesx($image);
-          $out    = imagecreatetruecolor($width, $height);
-  
-          imagealphablending($out, false);
-          imagesavealpha($out, true);
-  
-          imagecopyresampled($out, $image, 0, 0, 0, 0, $width, $height, imagesx($image), imagesy($image));
-          imagedestroy($image);
-  
-          $image = &$out;      
+          $height = imagesy($image) * $width / imagesx($image);     
         } else if (imagesy($image) > $height) {
-          $width = imagesx($image) * $height / imagesy($image);
-          $out   = imagecreatetruecolor($width, $height);
-  
-          imagealphablending($out, false);
-          imagesavealpha($out, true);
-  
-          imagecopyresampled($out, $image, 0, 0, 0, 0, $width, $height, imagesx($image), imagesy($image));
-          imagedestroy($image);
-  
-          $image = &$out;
+          $width = imagesx($image) * $height / imagesy($image); 
         }
 
-        ('image' . $type)($image, $cache, 70);
-  
-        imagedestroy($image);
+        $out = imagecreatetruecolor($width, $height);
+
+        imagealphablending($out, false);
+        imagesavealpha($out, true);
+
+        imagecopyresampled($out, $image, 0, 0, 0, 0, $width, $height, imagesx($image), imagesy($image));
+
+        $image = &$out;
+
+        imageantialias($out, true);
+
+        ('image' . $type)($image, $cache, 95);
       }
 
       $size_ = filesize($cache);
