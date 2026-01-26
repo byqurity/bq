@@ -229,7 +229,7 @@ hook('form', (e) => {
 
   e.addEventListener('submit', async (ev) => {
     const submitter   = ev.submitter ?? e,
-          url         = new URL(e.dataset.url ?? submitter.getAttribute('formaction') ?? e.action ?? location.pathname, location.href),
+          url         = new URL(e.dataset.url ?? submitter.getAttribute('formaction') ?? e.getAttribute('action') ?? location.pathname, location.href),
           method      = (submitter.getAttribute('formmethod') ?? e.getAttribute('method') ?? 'GET').toUpperCase(),
           contentType = submitter.getAttribute('formenctype') ?? e.getAttribute('enctype') ?? 'application/x-www-form-urlencoded';
 
@@ -238,7 +238,9 @@ hook('form', (e) => {
     ev.stopPropagation();
     ev.preventDefault();
 
-    document.dispatchEvent(new CustomEvent(`bq:fetch`, {  detail: e.action ?? location.pathname }));
+    document.dispatchEvent(new CustomEvent(`bq:fetch`, {  
+      detail: e.getAttribute('action') ?? location.pathname 
+    }));
 
     const setProperty = (key, v) => {
       const parts = key.split('.');
@@ -252,19 +254,23 @@ hook('form', (e) => {
       for (let i = 0, k; i < parts.length; i++) {
         k = parts[i];
 
-        if (k.endsWith('[]')) {
-          k = k.replace('[]', '');
+        if (i == parts.length -1) {
 
-          d[k] ??= [];
-        }
+         if (Array.isArray(d[k])) {
+            d[k].push(v);
+          } else if (d[k]) {
+            d[k] = [d[k]];
 
-        if (i < parts.length - 1) {
-          d[k] ??= k.endsWith('[]') ? [] : {};
-        } else {
-          Array.isArray(d[k]) ? d[k].push(v) : d[k] = v;
-        }
+            d[k].push(v);
+          } else {
+            d[k] = v;
+          }
 
-        d = d[k];
+          continue;
+        } 
+
+        d[k] ??= {};
+        d      = d[k];
       }
     }
 
@@ -279,6 +285,14 @@ hook('form', (e) => {
       if (input.type == 'number') {
         return input.valueAsNumber;
       } 
+
+      if (input.type === 'file') {
+        return input.files[0] ? new Promise(r => {
+          const _ = new FileReader();
+          _.onload = () => r(_.result);
+          _.readAsDataURL(input.files[0]);
+        }) : null;
+      }
       
       return v();
     }

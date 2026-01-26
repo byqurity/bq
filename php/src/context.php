@@ -7,6 +7,7 @@ class Context {
   private array $cookies     = [];
   private array $queryParams = [];
   private array $params      = [];
+  private array $subscribers = [];
   
   public string $path   = '/';
   public string $route  = '/';
@@ -31,6 +32,18 @@ class Context {
       }, []);
       
     }
+  }
+
+  public function emit($key, $data = null) {
+    foreach ($this->subscribers as $v) {
+      if ($v['key'] == $key) {
+        $v['fn']($this, $data);
+      }
+    }
+  }
+
+  public function subscribe($key, $fn) {
+    $this->subscribers[] = ['key' => $key, 'fn' => $fn];
   }
 
   public function header($key) {
